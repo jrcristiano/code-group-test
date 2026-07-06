@@ -1,0 +1,107 @@
+.not-found-page {
+  min-height: calc(100vh - var(--header-height) - (2 * var(--space-8)));
+  display: grid;
+  place-items: center;
+}
+
+.not-found-card {
+  position: relative;
+  width: min(100%, 44rem);
+  overflow: hidden;
+}
+
+.not-found-card::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  background: var(--color-brand-accent);
+  content: "";
+}
+
+.not-found-card__content {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: var(--space-10);
+  text-align: center;
+}
+
+.not-found-card__icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--space-5);
+  color: var(--color-brand-accent);
+  background: var(--color-brand-accent-soft);
+  border: 1px solid var(--color-brand-accent-muted);
+  border-radius: var(--radius-lg);
+}
+
+.not-found-card__eyebrow {
+  margin: 0 0 var(--space-2);
+  color: var(--color-brand-accent);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.not-found-card h1 {
+  margin: 0;
+  color: var(--color-slate-950);
+  font-family: var(--font-display);
+  font-size: clamp(var(--text-2xl), 4vw, var(--text-3xl));
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.not-found-card h1:focus {
+  outline: none;
+}
+
+.not-found-card__description {
+  max-width: 34rem;
+  margin: var(--space-4) 0 0;
+  color: var(--color-slate-600);
+  font-size: var(--text-md);
+  line-height: 1.6;
+}
+
+.not-found-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+}
+
+.not-found-card__actions .button {
+  min-height: 44px;
+}
+
+@media (max-width: 640px) {
+  .not-found-page {
+    min-height: calc(100vh - var(--header-height) - (2 * var(--space-5)));
+  }
+
+  .not-found-card__content {
+    padding: var(--space-8) var(--space-5);
+  }
+
+  .not-found-card__actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+    margin-top: var(--space-6);
+  }
+
+  .not-found-card__actions .button {
+    width: 100%;
+  }
+}

@@ -1,0 +1,60 @@
+# dependencies
+node_modules/
+api/node_modules/
+ui/node_modules/
+
+# builds
+dist/
+build/
+api/dist/
+ui/dist/
+
+.claude/settings.json
+
+# env
+.env
+.env.*
+!.env.example
+api/.env
+api/.env.*
+!api/.env.example
+ui/.env
+ui/.env.*
+!ui/.env.example
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# coverage
+coverage/
+api/coverage/
+ui/coverage/
+
+# database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+*.sqlite3
+prisma/dev.db
+api/prisma/dev.db
+
+# docker/local
+.docker/
+tmp/
+temp/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# cache
+.cache/
+.parcel-cache/
+.vite/
+*.tsbuildinfo

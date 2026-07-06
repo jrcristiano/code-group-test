@@ -1,0 +1,138 @@
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  migrate:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    command: npm run prisma:migrate:deploy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-postgres}?schema=public
+    depends_on:
+      database:
+        condition: service_healthy
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "${API_PORT:-8000}:${API_INTERNAL_PORT:-3000}"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${API_INTERNAL_PORT:-3000}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-postgres}?schema=public
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-true}
+      SWAGGER_SERVER: ${SWAGGER_SERVER:-.}
+      THROTTLE_TTL: ${THROTTLE_TTL:-60}
+      THROTTLE_LIMIT: ${THROTTLE_LIMIT:-30}
+      DB_POOL_MIN: ${DB_POOL_MIN:-2}
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
+      DB_POOL_ACQUIRE_TIMEOUT: ${DB_POOL_ACQUIRE_TIMEOUT:-30000}
+      MAX_PAYLOAD_SIZE: ${MAX_PAYLOAD_SIZE:-1mb}
+    depends_on:
+      database:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:${API_INTERNAL_PORT:-3000}/health/readiness').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+      target: production
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+    ports:
+      - "${UI_PORT:-5173}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  ui-dev:
+    profiles: ["dev"]
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+      target: development
+    command: npm run dev -- --host 0.0.0.0
+    environment:
+      VITE_API_TARGET: http://api-dev:${API_DEV_INTERNAL_PORT:-3001}
+    ports:
+      - "${UI_DEV_PORT:-5173}:5173"
+    volumes:
+      - ./ui:/app
+      - ui_node_modules:/app/node_modules
+    depends_on:
+      api-dev:
+        condition: service_healthy
+
+  api-dev:
+    profiles: ["dev"]
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      target: development
+    command: npm run start:dev
+    environment:
+      NODE_ENV: development
+      PORT: ${API_DEV_INTERNAL_PORT:-3001}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-postgres}?schema=public
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-true}
+      SWAGGER_SERVER: ${SWAGGER_SERVER:-.}
+      THROTTLE_TTL: ${THROTTLE_TTL:-60}
+      THROTTLE_LIMIT: ${THROTTLE_LIMIT:-30}
+      DB_POOL_MIN: ${DB_POOL_MIN:-2}
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
+      DB_POOL_ACQUIRE_TIMEOUT: ${DB_POOL_ACQUIRE_TIMEOUT:-30000}
+      MAX_PAYLOAD_SIZE: ${MAX_PAYLOAD_SIZE:-1mb}
+    ports:
+      - "${API_DEV_PORT:-3001}:${API_DEV_INTERNAL_PORT:-3001}"
+    volumes:
+      - ./api:/app
+      - api_node_modules:/app/node_modules
+    depends_on:
+      database:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:${API_DEV_INTERNAL_PORT:-3001}/health/readiness').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+volumes:
+  pgdata:
+  ui_node_modules:
+  api_node_modules:
